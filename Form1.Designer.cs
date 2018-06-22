@@ -1,111 +1,79 @@
-﻿namespace ConversorSQLtoXML
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using System.IO;
+
+namespace ConversorSQLtoXML
 {
-    partial class Form1
+    public partial class Form1 : Form
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
-
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
+        private string[] sql;
+        
+        public Form1()
         {
-            if (disposing && (components != null))
+            InitializeComponent();
+            sql = null;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                components.Dispose();
+                textBox1.Text=openFileDialog1.FileName;
+                sql = File.ReadAllLines(textBox1.Text);
             }
-            base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
-
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent()
+        private void button2_Click(object sender, EventArgs e)
         {
-            this.button1 = new System.Windows.Forms.Button();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
-            this.SuspendLayout();
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(266, 51);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "Buscar";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // textBox1
-            // 
-            this.textBox1.Location = new System.Drawing.Point(22, 53);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(212, 20);
-            this.textBox1.TabIndex = 1;
-            // 
-            // openFileDialog1
-            // 
-            this.openFileDialog1.FileName = "openFileDialog1";
-            this.openFileDialog1.Filter = "\"SQL *.sql|*.sql|All Files|*.*\"";
-            // 
-            // saveFileDialog1
-            // 
-            this.saveFileDialog1.Filter = "\"XML *.xml|*.xml|All Files|*.*\"";
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(377, 51);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
-            this.button2.TabIndex = 2;
-            this.button2.Text = "Generar";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(480, 51);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(75, 23);
-            this.button3.TabIndex = 3;
-            this.button3.Text = "Salir";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
-            // 
-            // Form1
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(593, 131);
-            this.Controls.Add(this.button3);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.textBox1);
-            this.Controls.Add(this.button1);
-            this.Name = "Form1";
-            this.Text = "Form1";
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                File.WriteAllText(saveFileDialog1.FileName, ToXML(sql));
+            }
         }
 
-        #endregion
+        private void button3_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
 
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.OpenFileDialog openFileDialog1;
-        private System.Windows.Forms.SaveFileDialog saveFileDialog1;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
+        private List<string> Etq(string[] sql)
+        {
+            List<string> list = new List<string>();
+            list.Add("<dbAdmin>");
+            list.Add("<doSQL>");
+            foreach (string s in sql)
+            {
+                if (s.Contains("--"))
+                    list.Add(s.Remove(s.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
+                else
+                    list.Add(s.TrimStart(' ').TrimEnd(' '));
+                if (s.Contains(";"))
+                {
+                    list.Add("</doSQL>");
+                    list.Add("<doSQL>");
+                }
+            }
+            list.RemoveAt(list.LastIndexOf("<doSQL>"));
+            list.Add("</dbAdmin>");
+            return list;
+        }
+
+        private string ToXML(string[] sql)
+        {
+            string str = null;
+            string[] astr = Etq(sql).ToArray();
+            foreach(string s in astr)
+            {
+                str += s + "\n";
+            }
+            return str;
+        }
     }
 }
 
