@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,7 +12,7 @@ namespace ConversorSQLtoXML
 {
     public partial class Form1 : Form
     {
-        private string sql;
+        private string[] sql;
         
         public Form1()
         {
@@ -25,7 +25,7 @@ namespace ConversorSQLtoXML
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 textBox1.Text=openFileDialog1.FileName;
-                sql = File.ReadAllText(textBox1.Text);
+                sql = File.ReadAllLines(textBox1.Text);
             }
         }
 
@@ -33,7 +33,7 @@ namespace ConversorSQLtoXML
         {
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                File.WriteAllText(saveFileDialog1.FileName, ToSQL(sql));
+                File.WriteAllText(saveFileDialog1.FileName, ToXML(sql));
             }
         }
 
@@ -42,19 +42,20 @@ namespace ConversorSQLtoXML
             this.Close();
         }
 
-        private string ToSQL(string sql)
+        private string ToXML(string[] sql)
         {
-            string s = null;
-            string str = null;
-            foreach (char c in sql)
+            string str = "<dbAdmin>\n<doSQL>";
+            foreach (string s in sql)
             {
-                s += c;
-                if (c == ';')
-                {
-                    str += "\n<doSQL>" + s + "</doSQL>\n";
-                    s = null;
-                }
+                if (s.Contains("--"))
+                    str += s.Remove(s.IndexOf("--"));
+                else
+                    str += s;
+                if (s.Contains(";"))
+                    str += "</doSQL>\n<doSQL>";
             }
+            str = str.Remove(str.Length-7);
+            str += "</dbAdmin>";
             return str;
         }
     }
