@@ -51,6 +51,12 @@ namespace SQLtoXML
             list.Add("<doSQL>");
             foreach (string s in sql)
             {
+                if(s.Contains("END;") && b)
+                {
+                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
+                    list.RemoveAt(list.LastIndexOf("</doSQL>"));
+                }
+                
                 if (s == "GO")
                 {
                     list.RemoveAt(list.LastIndexOf("<doSQL>"));
@@ -63,7 +69,7 @@ namespace SQLtoXML
                     if (str.Contains("CREATE PROCEDURE") || str.Contains("CREATE FUNCTION"))
                         b = false;
                     
-                    if (str.Contains("END;"))
+                    if (str.EndsWith("END;"))
                         b = true;
                     
                     if (str.Contains("--"))
