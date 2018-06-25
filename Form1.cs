@@ -46,6 +46,7 @@ namespace SQLtoXML
         {
             List<string> list = new List<string>();
             string str = null;
+            bool b = true;
             list.Add("<dbAdmin>");
             list.Add("<doSQL>");
             foreach (string s in sql)
@@ -59,14 +60,21 @@ namespace SQLtoXML
                 else if (s != null && s != "" && s != "/n")
                 {
                     str = SChng(s);
+                    if (str.Contains("CREATE PROCEDURE") || str.Contains("CREATE FUNCTION"))
+                        b = false;
+                    
+                    if (str.Contains("END;"))
+                        b = true;
+                    
                     if (str.Contains("--"))
                         list.Add(str.Remove(str.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
                     else
                         list.Add(str.TrimStart(' ').TrimEnd(' '));
-                    if (str.Contains(";"))
+                    
+                    if (str.EndsWith(";") && b)
                     {
-                        list.Add("</doSQL>");
-                        list.Add("<doSQL>");
+                            list.Add("</doSQL>");
+                            list.Add("<doSQL>");
                     }
                 }
             }
@@ -85,8 +93,10 @@ namespace SQLtoXML
             bool b = false;
             foreach(string s in astr)
             {
-                if (s.Contains(";") || s.Contains("PRIMARY KEY (") || s.Contains("CONSTRAINT"))
+                if (s.EndsWith(";") || s.Contains("PRIMARY KEY (") || s.Contains("CONSTRAINT"))
+                {
                     b = false;
+                }
                 if (b)
                 {
                     id = s.Substring(s.IndexOf(" ") + 1);
