@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 
-namespace ConversorSQLtoXML
+namespace SQLtoXML
 {
     public partial class Form1 : Form
     {
@@ -45,18 +45,29 @@ namespace ConversorSQLtoXML
         private List<string> Etq(string[] sql)
         {
             List<string> list = new List<string>();
+            string str = null;
             list.Add("<dbAdmin>");
             list.Add("<doSQL>");
             foreach (string s in sql)
             {
-                if (s.Contains("--"))
-                    list.Add(s.Remove(s.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
-                else
-                    list.Add(s.TrimStart(' ').TrimEnd(' '));
-                if (s.Contains(";"))
+                if (s == "GO")
                 {
-                    list.Add("</doSQL>");
+                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
+                    list.Add("GO");
                     list.Add("<doSQL>");
+                }
+                else if (s != null && s != "" && s != "/n")
+                {
+                    str = SChng(s);
+                    if (str.Contains("--"))
+                        list.Add(str.Remove(str.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
+                    else
+                        list.Add(str.TrimStart(' ').TrimEnd(' '));
+                    if (str.Contains(";"))
+                    {
+                        list.Add("</doSQL>");
+                        list.Add("<doSQL>");
+                    }
                 }
             }
             list.RemoveAt(list.LastIndexOf("<doSQL>"));
@@ -67,10 +78,37 @@ namespace ConversorSQLtoXML
         private string ToXML(string[] sql)
         {
             string str = null;
+            string node = null;
+            string id = null;
+            char[] any = { ' ', '(', ',' };
             string[] astr = Etq(sql).ToArray();
+            bool b = false;
             foreach(string s in astr)
             {
-                str += s + "\n";
+                if (s.Contains(";") || s.Contains("PRIMARY KEY (") || s.Contains("CONSTRAINT"))
+                    b = false;
+                if (b)
+                {
+                    id = s.Substring(s.IndexOf(" ") + 1);
+                    node = id.Substring(0, id.IndexOfAny(any, 0));
+                    id = s.Substring(0, s.IndexOf(" "));
+                    str += "<" + node + " id=\"" + id + "\">" + s + "</" + node + ">\n";
+                }
+                else
+                    str += s + "\n";
+                if (s.Contains("CREATE TABLE"))
+                    b = true;
+            }
+            return str;
+        }
+
+        private string SChng(string s)
+        {
+            string str = s;
+            if (s.Contains("<") || s.Contains(">"))
+            {
+                str = str.Replace("<", "&lt;");
+                str = str.Replace(">", "&gt;");
             }
             return str;
         }
