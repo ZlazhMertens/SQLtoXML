@@ -42,67 +42,20 @@ namespace SQLtoXML
             this.Close();
         }
 
-        private List<string> Etq(string[] sql)
-        {
-            List<string> list = new List<string>();
-            string str = null;
-            bool b = true;
-            list.Add("<dbAdmin>");
-            list.Add("<doSQL>");
-            foreach (string s in sql)
-            {
-                if(s.Contains("END;") && b)
-                {
-                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
-                    list.RemoveAt(list.LastIndexOf("</doSQL>"));
-                }
-                
-                if (s == "GO")
-                {
-                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
-                    list.Add("GO");
-                    list.Add("<doSQL>");
-                }
-                else if (s != null && s != "" && s != "/n")
-                {
-                    str = SChng(s);
-                    if (str.Contains("CREATE PROCEDURE") || str.Contains("CREATE FUNCTION"))
-                        b = false;
-                    
-                    if (str.EndsWith("END;"))
-                        b = true;
-                    
-                    if (str.Contains("--"))
-                        list.Add(str.Remove(str.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
-                    else
-                        list.Add(str.TrimStart(' ').TrimEnd(' '));
-                    
-                    if (str.EndsWith(";") && b)
-                    {
-                            list.Add("</doSQL>");
-                            list.Add("<doSQL>");
-                    }
-                }
-            }
-            list.RemoveAt(list.LastIndexOf("<doSQL>"));
-            list.Add("</dbAdmin>");
-            return list;
-        }
-
         private string ToXML(string[] sql)
         {
             string str = null;
             string node = null;
             string id = null;
             char[] any = { ' ', '(', ',' };
-            string[] astr = Etq(sql).ToArray();
             bool b = false;
-            foreach(string s in astr)
+            foreach (string s in Etq(clean(sql)))
             {
                 if (s.EndsWith(";") || s.Contains("PRIMARY KEY (") || s.Contains("CONSTRAINT"))
                 {
                     b = false;
                 }
+                
                 if (b)
                 {
                     id = s.Substring(s.IndexOf(" ") + 1);
@@ -112,21 +65,74 @@ namespace SQLtoXML
                 }
                 else
                     str += s + "\n";
+                
                 if (s.Contains("CREATE TABLE"))
                     b = true;
             }
             return str;
         }
 
-        private string SChng(string s)
+        private string[] Etq(List<string> lst)
         {
-            string str = s;
-            if (s.Contains("<") || s.Contains(">"))
+            List<string> list = new List<string>();
+            bool b = true;
+            list.Add("<dbAdmin>");
+            list.Add("<doSQL>");
+            foreach (string s in lst)
             {
-                str = str.Replace("<", "&lt;");
-                str = str.Replace(">", "&gt;");
+                if (s.Contains("END;") && b)
+                {
+                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
+                    list.RemoveAt(list.LastIndexOf("</doSQL>"));
+                }
+                if (s == "GO")
+                {
+                    list.RemoveAt(list.LastIndexOf("<doSQL>"));
+                    list.Add("GO");
+                    list.Add("<doSQL>");
+                }
+                else
+                {
+                    list.Add(s);
+                    if (s.Contains("CREATE PROCEDURE") || s.Contains("CREATE FUNCTION"))
+                        b = false;
+                    if (s.EndsWith("END;"))
+                        b = true;
+                    if (s.EndsWith(";") && b)
+                    {
+                        list.Add("</doSQL>");
+                        list.Add("<doSQL>");
+                    }
+                }
             }
-            return str;
+            list.RemoveAt(list.LastIndexOf("<doSQL>"));
+            list.Add("</dbAdmin>");
+            return list.ToArray();
+        }
+
+        private List<string> clean(string[] sql)
+        {
+            List<string> list = new List<string>();
+            string s = null;
+            foreach(string str in sql)
+            {
+                s = str;
+                if (s.Contains("--"))
+                    s = s.Remove(s.IndexOf("--")).Trim();
+                else
+                    s = s.Trim();
+                
+                if (s != null && s != "" && s != "\n" && s != "\t")
+                {
+                    if (s.Contains("<") || s.Contains(">"))
+                    {
+                        s = s.Replace("<", "&lt;");
+                        s = s.Replace(">", "&gt;");
+                    }
+                    list.Add(s);
+                }
+            }
+            return list;
         }
     }
 }
