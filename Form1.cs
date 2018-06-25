@@ -42,20 +42,36 @@ namespace ConversorSQLtoXML
             this.Close();
         }
 
-        private string ToXML(string[] sql)
+        private List<string> Etq(string[] sql)
         {
-            string str = "<dbAdmin>\n<doSQL>";
+            List<string> list = new List<string>();
+            list.Add("<dbAdmin>");
+            list.Add("<doSQL>");
             foreach (string s in sql)
             {
                 if (s.Contains("--"))
-                    str += s.Remove(s.IndexOf("--"));
+                    list.Add(s.Remove(s.IndexOf("--")).TrimStart(' ').TrimEnd(' '));
                 else
-                    str += s;
+                    list.Add(s.TrimStart(' ').TrimEnd(' '));
                 if (s.Contains(";"))
-                    str += "</doSQL>\n<doSQL>";
+                {
+                    list.Add("</doSQL>");
+                    list.Add("<doSQL>");
+                }
             }
-            str = str.Remove(str.Length-7);
-            str += "</dbAdmin>";
+            list.RemoveAt(list.LastIndexOf("<doSQL>"));
+            list.Add("</dbAdmin>");
+            return list;
+        }
+
+        private string ToXML(string[] sql)
+        {
+            string str = null;
+            string[] astr = Etq(sql).ToArray();
+            foreach(string s in astr)
+            {
+                str += s + "\n";
+            }
             return str;
         }
     }
